@@ -18,6 +18,7 @@
 
 如果您在使用过程中有什么问题，请直接发邮件到zhangpdg#gmail.com(#转@)
 
+参考例子：https://github.com/pengzhang/wechat-test
 
 `感谢wechat4j`
 
