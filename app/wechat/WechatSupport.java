@@ -6,12 +6,12 @@ package wechat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
+import play.Logger;
+import play.mvc.Http;
 import utils.JaxbParser;
 import utils.StreamUtils;
 import wechat.common.Config;
@@ -38,10 +38,9 @@ import wechat.response.WechatResponse;
  */
 public abstract class WechatSupport {
 	
-	Logger logger = Logger.getLogger(WechatSupport.class);
 	
-	private HttpServletRequest request;
-	
+	private Http.Request request;
+	private Map<String,String[]> params;
 	protected WechatRequest wechatRequest;
 	protected WechatResponse wechatResponse;
 	
@@ -50,8 +49,9 @@ public abstract class WechatSupport {
 	 * 构建微信处理
 	 * @param request   微信服务发过来的http请求
 	 */
-	public WechatSupport(HttpServletRequest request){
+	public WechatSupport(Http.Request request,Map<String,String[]> params){
 		this.request = request;
+		this.params = params;
 		this.wechatRequest = new WechatRequest();
 		this.wechatResponse = new WechatResponse();
 	}
@@ -61,8 +61,8 @@ public abstract class WechatSupport {
 	 * @return
 	 */
 	public String execute(){
-		logger.debug("WechatSupport run");
-		SignatureParam param = new SignatureParam(request);
+		Logger.debug("WechatSupport run");
+		SignatureParam param = new SignatureParam(params);
 		String signature =param.getSignature();
 		String timestamp = param.getTimestamp();
 		String nonce = param.getNonce();
@@ -79,7 +79,7 @@ public abstract class WechatSupport {
 		}
 		//分发消息，得到响应
 		String result = dispatch();
-		logger.info("response data:" + result);
+		Logger.info("response data:" + result);
 		return result;
 	}
 	
@@ -89,12 +89,7 @@ public abstract class WechatSupport {
 	 */
 	private String dispatch() {
 		String postDataStr = null;
-		try {
-			 postDataStr = StreamUtils.streamToString(request.getInputStream());
-		} catch (IOException e) {
-			logger.error("post data deal failed!");
-			e.printStackTrace();
-		}
+		postDataStr = StreamUtils.streamToString(request.body);
 		// 解析数据
 		setPostData(postDataStr);
 		// 消息分发处理
@@ -111,12 +106,12 @@ public abstract class WechatSupport {
 	 * @param xmlStr
 	 */
 	private void setPostData(String xmlStr){
-		logger.info("parse post data:" + xmlStr);
+		Logger.info("parse post data:" + xmlStr);
 		try {
 			JaxbParser jaxbParser = new JaxbParser(WechatRequest.class);
 			this.wechatRequest = (WechatRequest)jaxbParser.toObj(xmlStr);
 		} catch (Exception e) {
-			logger.error("post data parse error");
+			Logger.error("post data parse error");
 			e.printStackTrace();
 		}
 	}
@@ -125,12 +120,12 @@ public abstract class WechatSupport {
 	 * 消息事件分发
 	 */
 	private void dispatchMessage(){
-		logger.info("distributeMessage start");
+		Logger.info("distributeMessage start");
 		if(StringUtils.isBlank(wechatRequest.getMsgType())){
-			logger.info("msgType is null");
+			Logger.info("msgType is null");
 		}
 		MsgType msgType = MsgType.valueOf(wechatRequest.getMsgType());
-		logger.info("msgType is " + msgType.name());
+		Logger.info("msgType is " + msgType.name());
 		switch (msgType) {
 		case event:
 			dispatchEvent();
@@ -166,7 +161,7 @@ public abstract class WechatSupport {
 	 */
 	private void dispatchEvent() {
 		EventType event = EventType.valueOf(wechatRequest.getEvent());
-		logger.info("dispatch event,event is " + event.name());
+		Logger.info("dispatch event,event is " + event.name());
 		switch (event) {
 		case CLICK:
 			click();

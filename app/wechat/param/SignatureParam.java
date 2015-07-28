@@ -3,6 +3,8 @@
  */
 package wechat.param;
 
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -17,11 +19,11 @@ public class SignatureParam {
 	private String nonce;
 	private String echostr;
 	
-	public SignatureParam(HttpServletRequest request){
-		signature = request.getParameter(WechatParamName.SIGNATURE);
-		timestamp = request.getParameter(WechatParamName.TIMESTAMP);
-		nonce = request.getParameter(WechatParamName.NONCE);
-		echostr = request.getParameter(WechatParamName.ECHOSTR);
+	public SignatureParam(Map<String,String[]> params){
+		signature = params.get(WechatParamName.SIGNATURE)[0];
+		timestamp = params.get(WechatParamName.TIMESTAMP)[0];
+		nonce = params.get(WechatParamName.NONCE)[0];
+		echostr = params.get(WechatParamName.ECHOSTR)==null?"":params.get(WechatParamName.ECHOSTR)[0];
 	}
 
 	public String getSignature() {
